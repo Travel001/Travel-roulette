@@ -1,0 +1,1372 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI旅ルーレット｜PC・スマホ両対応</title>
+<style>
+body{margin:0;font-family:"Yu Gothic",sans-serif;background:linear-gradient(135deg,#020617,#111827);color:white;min-height:100vh}
+.container{max-width:1100px;margin:auto;padding:20px;text-align:center}
+.title{font-size:40px;color:#38bdf8}
+input,select{padding:12px;border-radius:12px;border:none;margin:8px;font-size:16px;max-width:90%}
+.pref-map,.city-map,.visited-map{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-top:20px}
+.pref,.city,.visited-pref{background:#1e293b;border:1px solid #334155;border-radius:14px;padding:12px;font-size:14px}
+.active{background:linear-gradient(135deg,#ff0080,#ff5e00)!important;transform:scale(1.08)}
+.selected{background:linear-gradient(135deg,#00c6ff,#0072ff)!important}
+button{padding:14px 25px;border:none;border-radius:999px;background:linear-gradient(135deg,#ff0080,#7928ca);color:white;font-size:16px;margin:10px;cursor:pointer}
+.card{background:#111827;border:1px solid #334155;border-radius:20px;padding:18px;margin-top:20px;text-align:left}
+.card h3{color:#38bdf8}
+.result{display:none;margin-top:30px}
+.ai-plan{white-space:pre-wrap;line-height:1.8}
+a{color:#38bdf8;font-weight:bold}
+.saved-item,.food-item,.visited-city-item{background:#1e293b;border-radius:12px;padding:12px;margin:10px 0;cursor:pointer;border:1px solid #334155}
+.saved-item:hover{background:#334155}
+.delete-btn{padding:8px 14px;font-size:13px;background:#475569}.type-badge{display:inline-block;padding:6px 10px;border-radius:999px;background:#334155;margin:4px 0;color:#e0f2fe}.cost-table{width:100%;border-collapse:collapse;margin-top:10px}.cost-table th,.cost-table td{border:1px solid #334155;padding:10px;text-align:left}.cost-ok{color:#22c55e;font-weight:bold}.cost-ng{color:#f87171;font-weight:bold}.cost-warn{color:#facc15;font-weight:bold}.share-buttons{display:flex;flex-wrap:wrap;gap:10px}.share-buttons button,.share-buttons a{display:inline-block;padding:12px 18px;border-radius:999px;background:linear-gradient(135deg,#06c755,#16a34a);color:white;text-decoration:none;border:none;font-size:15px;cursor:pointer}.share-buttons .mail{background:linear-gradient(135deg,#0ea5e9,#2563eb)}.share-buttons .copy{background:linear-gradient(135deg,#64748b,#334155)}.visited-pref.done{background:linear-gradient(135deg,#16a34a,#15803d)}.progress-bar{width:100%;background:#334155;border-radius:999px;overflow:hidden;margin:10px 0}.progress-fill{height:20px;background:linear-gradient(135deg,#22c55e,#38bdf8);width:0%}.small-text{color:#cbd5e1;font-size:14px}
+@media(max-width:700px){
+.title{font-size:30px}
+.pref-map,.city-map,.visited-map{grid-template-columns:repeat(3,1fr)}
+.pref,.city,.visited-pref{font-size:12px;padding:10px}
+button{width:100%}
+}
+
+/* Responsive layout for narrow phones and wide desktops */
+*,*::before,*::after{box-sizing:border-box}
+html,body{width:100%;max-width:100%;overflow-x:hidden}
+.container{width:100%;max-width:1100px}
+.card{min-width:0;overflow-wrap:anywhere}
+.ai-plan{overflow-wrap:anywhere;word-break:break-word}
+.cost-table{max-width:100%;font-size:clamp(12px,2.5vw,16px)}
+input,select,button{min-height:44px;touch-action:manipulation}
+button:focus-visible,a:focus-visible,select:focus-visible,input:focus-visible{outline:3px solid #38bdf8;outline-offset:2px}
+@media(max-width:700px){
+ .container{padding:12px;text-align:center}
+ .title{font-size:clamp(24px,7vw,32px)}
+ .card{padding:14px;border-radius:16px}
+ .pref-map,.city-map,.visited-map{grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}
+ .pref,.city,.visited-pref{font-size:12px;padding:9px 5px;min-width:0;overflow-wrap:anywhere}
+ input:not([type=checkbox]),select{display:block;width:100%;max-width:100%;margin:8px 0}
+ button{display:block;width:100%;max-width:100%;margin:7px 0;white-space:normal}
+ .share-buttons{flex-direction:column}
+ .share-buttons button,.share-buttons a{width:100%;text-align:center}
+ .cost-table th,.cost-table td{padding:7px 5px}
+}
+@media(max-width:350px){.pref-map,.city-map,.visited-map{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto!important}*{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+/* Roulette selection clarity */
+.selection-panel{position:sticky;top:8px;z-index:20;margin:18px 0;padding:18px 14px;border:2px solid #38bdf8;border-radius:18px;background:rgba(15,23,42,.97);box-shadow:0 8px 26px #0008;text-align:center}
+.selection-label{color:#bae6fd;font-size:14px;font-weight:bold}
+.selection-pref{font-size:clamp(26px,7vw,42px);font-weight:900;color:#fff;overflow-wrap:anywhere;margin:5px 0}
+.selection-city{font-size:clamp(20px,5vw,29px);font-weight:800;color:#facc15;overflow-wrap:anywhere}
+.selection-status{font-size:13px;color:#cbd5e1;margin-top:8px}
+.pref.selected,.city.selected{background:linear-gradient(135deg,#0284c7,#2563eb)!important;outline:3px solid #facc15;outline-offset:1px;box-shadow:0 0 16px #38bdf888}
+@media(max-width:700px){.selection-panel{top:5px;padding:12px 10px;margin:12px 0}}
+
+/* Selected destination: continuous blinking until the next draw */
+@keyframes destinationFlash{0%,100%{background:#0f172a;box-shadow:0 0 0 2px #facc15}50%{background:#854d0e;box-shadow:0 0 0 5px #facc15,0 0 28px #facc1599}}
+@keyframes tileFlash{0%,100%{filter:brightness(1);box-shadow:0 0 12px #38bdf8}50%{filter:brightness(1.7);box-shadow:0 0 26px #facc15}}
+.selection-panel.flash-result{animation:destinationFlash .85s ease-in-out infinite;border-color:#facc15}
+.pref.selected.flash-tile,.city.selected.flash-tile{animation:tileFlash .85s ease-in-out infinite}
+.selection-panel.final-result{border:3px solid #facc15;background:linear-gradient(135deg,#172554,#0f172a);box-shadow:0 0 20px #facc1544}
+.selection-panel.final-result .selection-pref{color:#fef08a}
+.selection-panel.final-result .selection-city{color:#fff}
+@media(prefers-reduced-motion:reduce){.selection-panel.flash-result,.pref.selected.flash-tile,.city.selected.flash-tile{animation:none!important}}
+</style>
+</head>
+<body>
+<div class="container">
+<h1 class="title">🎡 AI旅ルーレット</h1>
+<p>47都道府県から旅行先を決めるWebアプリ</p>
+
+<p>旅行日</p>
+<input type="date" id="travelDate">
+
+<p>予算 任意</p>
+<input type="number" id="budget" placeholder="例：30000">
+
+<p>出発地 任意</p>
+<select id="startPref">
+<option value="">出発地を選択しない</option>
+</select>
+
+<p>旅行タイプ</p>
+<select id="travelType">
+<option value="standard">標準プラン</option>
+<option value="solo">一人旅</option>
+<option value="friends">友達旅行</option>
+<option value="couple">カップル旅行</option>
+<option value="family">家族旅行</option>
+<option value="gourmet">グルメ旅</option>
+<option value="onsen">温泉旅</option>
+<option value="nature">自然旅</option>
+<option value="pet">🐾 ペット連れ旅行</option>
+</select>
+
+
+<div class="card">
+<h3>✅ 行った県登録</h3>
+<p class="small-text">ルーレットとは別に、行ったことがある都道府県を登録できます。</p>
+
+<select id="visitedSelect">
+<option value="">行った県を選択</option>
+</select>
+
+<button onclick="addVisitedPref()">追加</button>
+<button onclick="clearVisitedPrefs()">行った県を全部削除</button>
+
+<hr style="border:1px solid #334155;margin:18px 0;">
+
+<h3>🌏 地方ごとに一括登録</h3>
+<p class="small-text">東北地方・関西地方などをまとめて「行った県」に追加できます。</p>
+
+<select id="regionSelect">
+<option value="">地方を選択</option>
+<option value="hokkaido">北海道</option>
+<option value="tohoku">東北地方</option>
+<option value="kanto">関東地方</option>
+<option value="chubu">中部地方</option>
+<option value="kansai">関西地方</option>
+<option value="chugoku">中国地方</option>
+<option value="shikoku">四国地方</option>
+<option value="kyushu">九州・沖縄地方</option>
+</select>
+
+<button onclick="addVisitedRegion()">選んだ地方を一括追加</button>
+<button onclick="removeVisitedRegion()">選んだ地方を一括解除</button>
+
+<hr style="border:1px solid #334155;margin:18px 0;">
+
+<h3>🏙 行った市町村登録</h3>
+<p class="small-text">行ったことがある市町村も登録できます。</p>
+
+<select id="visitedCityPrefSelect" onchange="createVisitedCitySelect()">
+<option value="">都道府県を選択</option>
+</select>
+
+<select id="visitedCitySelect">
+<option value="">市町村を選択</option>
+</select>
+
+<button onclick="addVisitedCity()">市町村を追加</button>
+<button onclick="clearVisitedCities()">行った市町村を全部削除</button>
+
+<div id="visitedCityProgressText" class="small-text">行った市町村：0件</div>
+
+<label>
+<input type="checkbox" id="excludeVisitedCities" onchange="createCityRoulette()">
+行った市町村を除外して市町村ルーレットを回す
+</label>
+
+<div id="visitedCityList" class="small-text">まだ登録されていません。</div>
+
+<h3>🗾 47都道府県制覇率</h3>
+<div id="visitedProgressText">0 / 47県</div>
+<div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+
+<label>
+<input type="checkbox" id="excludeVisited">
+行った県を除外して全国ルーレットを回す
+</label>
+
+<div id="unvisitedList" class="small-text"></div>
+<div class="visited-map" id="visitedMap"></div>
+</div>
+
+<div class="selection-panel" id="selectionPanel" role="status" aria-live="polite" aria-atomic="true">
+<div class="selection-label">🎯 現在選ばれている旅行先</div>
+<div class="selection-pref" id="selectedPrefText">都道府県を選んでください</div>
+<div class="selection-city" id="selectedCityText">市町村：未選択</div>
+<div class="selection-status" id="selectionStatus">ルーレットを回すとここに結果が表示されます</div>
+</div>
+<h2>🗾 都道府県ルーレット</h2>
+<div class="pref-map" id="prefMap"></div>
+
+<h2>🗾 都道府県を自分で選ぶ</h2>
+<select id="prefSelect" onchange="createCityRoulette()">
+<option value="">都道府県を選択</option>
+</select>
+
+<h2>🏙 市町村ルーレット</h2>
+<div class="city-map" id="cityMap"></div>
+
+<label style="display:inline-flex;align-items:center;gap:8px;margin:12px;font-size:16px"><input type="checkbox" id="rouletteSound" checked> 🔊 ルーレット効果音 ON</label><br>
+<button onclick="spinPrefRoulette()">🎲 全国ルーレット</button>
+<button onclick="spinCityRoulette()">🏙 市町村ルーレット</button>
+
+<div class="result" id="result"></div>
+
+<div class="card">
+<h3>❤️ 保存した旅行先</h3>
+<p>保存した旅行先を押すと、その時の結果をもう一度見られます。</p>
+<div id="savedList">まだ保存されていません。</div>
+<button onclick="clearAllTrips()">すべて削除</button>
+</div>
+</div>
+
+<script>
+const appStorage=(()=>{
+ const fallback={};
+ return {
+  getItem(k){try{return window.localStorage.getItem(k)}catch(e){return fallback[k]??null}},
+  setItem(k,v){fallback[k]=String(v);try{window.localStorage.setItem(k,String(v))}catch(e){}},
+  removeItem(k){delete fallback[k];try{window.localStorage.removeItem(k)}catch(e){}}
+ };
+})();
+
+const travelData = {"北海道": {"cities": ["札幌市", "小樽市", "函館市", "旭川市", "富良野市", "帯広市", "釧路市", "登別市", "網走市", "稚内市"], "lat": 43.0642, "lon": 141.3469, "foods": [["海鮮丼", "新鮮な魚介を楽しめる北海道定番グルメ", "★★★★★"], ["ジンギスカン", "羊肉を焼いて食べる北海道名物", "★★★★☆"], ["味噌ラーメン", "札幌を代表する濃厚ラーメン", "★★★★☆"]]}, "青森県": {"cities": ["青森市", "弘前市", "八戸市", "十和田市", "むつ市", "五所川原市", "黒石市", "三沢市", "平川市", "つがる市"], "lat": 40.8244, "lon": 140.74, "foods": [["せんべい汁", "南部せんべいを使った郷土料理", "★★★★★"], ["りんごスイーツ", "青森産りんごを使った人気グルメ", "★★★★☆"], ["海鮮丼", "港町で楽しめる新鮮な魚介料理", "★★★★☆"]]}, "岩手県": {"cities": ["盛岡市", "花巻市", "一関市", "宮古市", "釜石市", "北上市", "奥州市", "遠野市", "久慈市", "二戸市"], "lat": 39.7036, "lon": 141.1527, "foods": [["盛岡冷麺", "コシのある麺が特徴の盛岡名物", "★★★★★"], ["わんこそば", "岩手を代表する体験型そば料理", "★★★★★"], ["じゃじゃ麺", "盛岡三大麺のひとつ", "★★★★☆"]]}, "宮城県": {"cities": ["仙台市", "石巻市", "気仙沼市", "白石市", "名取市", "大崎市", "塩竈市", "多賀城市", "栗原市", "登米市"], "lat": 38.2688, "lon": 140.8721, "foods": [["牛タン", "仙台を代表する人気グルメ", "★★★★★"], ["ずんだ餅", "枝豆を使った宮城の甘味", "★★★★☆"], ["笹かまぼこ", "お土産にも人気の名物", "★★★★☆"]]}, "秋田県": {"cities": ["秋田市", "横手市", "大館市", "男鹿市", "仙北市", "能代市", "湯沢市", "鹿角市", "由利本荘市", "大仙市"], "lat": 39.7186, "lon": 140.1024, "foods": [["きりたんぽ鍋", "秋田を代表する郷土鍋料理", "★★★★★"], ["稲庭うどん", "なめらかな食感の高級うどん", "★★★★☆"], ["横手焼きそば", "半熟卵が特徴のB級グルメ", "★★★★☆"]]}, "山形県": {"cities": ["山形市", "米沢市", "酒田市", "鶴岡市", "天童市", "上山市", "寒河江市", "新庄市", "南陽市", "東根市"], "lat": 38.2404, "lon": 140.3633, "foods": [["米沢牛", "山形を代表する高級和牛", "★★★★★"], ["芋煮", "山形の秋を代表する郷土料理", "★★★★★"], ["冷たい肉そば", "河北町周辺で人気のそば料理", "★★★★☆"]]}, "福島県": {"cities": ["福島市", "郡山市", "会津若松市", "いわき市", "喜多方市", "白河市", "須賀川市", "相馬市", "二本松市", "南相馬市"], "lat": 37.7503, "lon": 140.4676, "foods": [["喜多方ラーメン", "朝ラー文化でも有名な福島名物", "★★★★★"], ["円盤餃子", "福島市で人気のご当地餃子", "★★★★☆"], ["ソースカツ丼", "会津地方などで親しまれる名物", "★★★★☆"]]}, "茨城県": {"cities": ["水戸市", "つくば市", "日立市", "ひたちなか市", "鹿嶋市", "土浦市", "古河市", "牛久市", "笠間市", "大洗町"], "lat": 36.3418, "lon": 140.4468, "foods": [["納豆", "水戸を代表する定番グルメ", "★★★★★"], ["あんこう鍋", "冬に人気の茨城名物", "★★★★☆"], ["常陸牛", "茨城のブランド牛", "★★★★☆"]]}, "栃木県": {"cities": ["宇都宮市", "日光市", "那須塩原市", "足利市", "佐野市", "栃木市", "小山市", "鹿沼市", "真岡市", "那須町"], "lat": 36.5657, "lon": 139.8836, "foods": [["宇都宮餃子", "栃木を代表する人気グルメ", "★★★★★"], ["佐野ラーメン", "青竹打ち麺が特徴のご当地ラーメン", "★★★★★"], ["いちごスイーツ", "栃木産いちごを使ったスイーツ", "★★★★☆"]]}, "群馬県": {"cities": ["前橋市", "高崎市", "草津町", "渋川市", "富岡市", "桐生市", "伊勢崎市", "太田市", "館林市", "沼田市"], "lat": 36.3912, "lon": 139.0609, "foods": [["焼きまんじゅう", "甘辛い味噌だれが特徴の郷土グルメ", "★★★★★"], ["水沢うどん", "日本三大うどんのひとつ", "★★★★☆"], ["ソースカツ丼", "群馬で親しまれる定番メニュー", "★★★★☆"]]}, "埼玉県": {"cities": ["さいたま市", "川越市", "秩父市", "所沢市", "熊谷市", "川口市", "越谷市", "春日部市", "草加市", "長瀞町"], "lat": 35.8569, "lon": 139.6489, "foods": [["草加せんべい", "埼玉を代表する名物せんべい", "★★★★☆"], ["味噌ポテト", "秩父で人気のB級グルメ", "★★★★★"], ["川越いもスイーツ", "川越観光と相性の良い甘味", "★★★★☆"]]}, "千葉県": {"cities": ["千葉市", "成田市", "浦安市", "館山市", "鴨川市", "船橋市", "木更津市", "銚子市", "市川市", "南房総市"], "lat": 35.6047, "lon": 140.1233, "foods": [["なめろう", "房総半島で親しまれる魚料理", "★★★★★"], ["落花生スイーツ", "千葉名産の落花生を使った甘味", "★★★★☆"], ["海鮮丼", "銚子や館山で人気の魚介グルメ", "★★★★☆"]]}, "東京都": {"cities": ["新宿区", "渋谷区", "台東区", "港区", "八王子市", "千代田区", "中央区", "墨田区", "世田谷区", "町田市"], "lat": 35.6895, "lon": 139.6917, "foods": [["江戸前寿司", "東京を代表する定番グルメ", "★★★★★"], ["もんじゃ焼き", "月島で有名な下町グルメ", "★★★★☆"], ["深川めし", "あさりを使った郷土料理", "★★★★☆"]]}, "神奈川県": {"cities": ["横浜市", "鎌倉市", "箱根町", "藤沢市", "小田原市", "川崎市", "横須賀市", "逗子市", "相模原市", "江の島"], "lat": 35.4478, "lon": 139.6425, "foods": [["家系ラーメン", "横浜発祥の濃厚ラーメン", "★★★★★"], ["しらす丼", "湘南エリアで人気の海鮮グルメ", "★★★★☆"], ["崎陽軒シウマイ", "横浜土産としても定番", "★★★★☆"]]}, "新潟県": {"cities": ["新潟市", "長岡市", "湯沢町", "上越市", "佐渡市", "三条市", "柏崎市", "村上市", "糸魚川市", "妙高市"], "lat": 37.9026, "lon": 139.0232, "foods": [["へぎそば", "布海苔をつなぎに使った新潟名物", "★★★★★"], ["タレカツ丼", "新潟市で人気のご当地丼", "★★★★☆"], ["コシヒカリおにぎり", "米どころ新潟らしい定番グルメ", "★★★★★"]]}, "富山県": {"cities": ["富山市", "高岡市", "黒部市", "氷見市", "魚津市", "砺波市", "射水市", "南砺市", "滑川市", "立山町"], "lat": 36.6953, "lon": 137.2113, "foods": [["白えび料理", "富山湾の宝石と呼ばれる名物", "★★★★★"], ["ます寿司", "富山を代表する押し寿司", "★★★★☆"], ["富山ブラックラーメン", "濃い醤油味が特徴のラーメン", "★★★★☆"]]}, "石川県": {"cities": ["金沢市", "加賀市", "七尾市", "輪島市", "小松市", "白山市", "珠洲市", "能美市", "羽咋市", "和倉温泉"], "lat": 36.5947, "lon": 136.6256, "foods": [["のどぐろ", "高級魚として人気の石川グルメ", "★★★★★"], ["金沢カレー", "濃厚なルーが特徴のご当地カレー", "★★★★☆"], ["加能ガニ", "冬に人気のブランドガニ", "★★★★★"]]}, "福井県": {"cities": ["福井市", "敦賀市", "坂井市", "勝山市", "小浜市", "鯖江市", "大野市", "越前市", "あわら市", "永平寺町"], "lat": 36.0652, "lon": 136.2216, "foods": [["越前そば", "辛味大根で食べる福井名物", "★★★★★"], ["ソースカツ丼", "福井で親しまれる定番丼", "★★★★☆"], ["越前ガニ", "冬の福井を代表する高級グルメ", "★★★★★"]]}, "山梨県": {"cities": ["甲府市", "富士吉田市", "北杜市", "笛吹市", "山中湖村", "甲州市", "都留市", "韮崎市", "河口湖町", "身延町"], "lat": 35.6639, "lon": 138.5683, "foods": [["ほうとう", "山梨を代表する味噌仕立ての郷土料理", "★★★★★"], ["吉田のうどん", "コシの強い麺が特徴", "★★★★☆"], ["信玄餅", "お土産としても人気の甘味", "★★★★☆"]]}, "長野県": {"cities": ["長野市", "松本市", "軽井沢町", "白馬村", "上田市", "諏訪市", "飯田市", "安曇野市", "小布施町", "野沢温泉村"], "lat": 36.6513, "lon": 138.181, "foods": [["信州そば", "長野を代表する定番グルメ", "★★★★★"], ["おやき", "野菜やあんを包んだ郷土料理", "★★★★☆"], ["山賊焼き", "松本・塩尻周辺の人気鶏料理", "★★★★☆"]]}, "岐阜県": {"cities": ["岐阜市", "高山市", "下呂市", "白川村", "郡上市", "大垣市", "多治見市", "関市", "中津川市", "飛騨市"], "lat": 35.3912, "lon": 136.7223, "foods": [["飛騨牛", "岐阜を代表する高級和牛", "★★★★★"], ["五平餅", "甘辛い味噌だれが特徴の郷土料理", "★★★★☆"], ["高山ラーメン", "あっさり醤油味のご当地ラーメン", "★★★★☆"]]}, "静岡県": {"cities": ["静岡市", "浜松市", "熱海市", "伊東市", "富士宮市", "沼津市", "三島市", "下田市", "掛川市", "御殿場市"], "lat": 34.9769, "lon": 138.3831, "foods": [["静岡おでん", "黒い出汁が特徴のご当地おでん", "★★★★★"], ["浜松餃子", "円形に並べるスタイルが有名", "★★★★☆"], ["うなぎ", "浜名湖周辺で人気の名物", "★★★★★"]]}, "愛知県": {"cities": ["名古屋市", "豊田市", "犬山市", "岡崎市", "常滑市", "豊橋市", "一宮市", "瀬戸市", "蒲郡市", "南知多町"], "lat": 35.1802, "lon": 136.9066, "foods": [["味噌カツ", "八丁味噌だれが特徴の名古屋めし", "★★★★★"], ["ひつまぶし", "名古屋を代表するうなぎ料理", "★★★★★"], ["手羽先", "居酒屋でも人気の名古屋グルメ", "★★★★☆"]]}, "三重県": {"cities": ["津市", "伊勢市", "鳥羽市", "志摩市", "桑名市", "四日市市", "松阪市", "熊野市", "伊賀市", "鈴鹿市"], "lat": 34.7303, "lon": 136.5086, "foods": [["伊勢うどん", "やわらかい太麺が特徴の伊勢名物", "★★★★☆"], ["松阪牛", "三重を代表する高級和牛", "★★★★★"], ["てこね寿司", "伊勢志摩地方の郷土料理", "★★★★☆"]]}, "滋賀県": {"cities": ["大津市", "彦根市", "長浜市", "草津市", "近江八幡市", "高島市", "甲賀市", "守山市", "東近江市", "米原市"], "lat": 35.0045, "lon": 135.8686, "foods": [["近江牛", "滋賀を代表するブランド和牛", "★★★★★"], ["鮒ずし", "琵琶湖周辺の伝統発酵食品", "★★★☆☆"], ["赤こんにゃく", "近江八幡周辺で有名な郷土食", "★★★★☆"]]}, "京都府": {"cities": ["京都市", "宇治市", "舞鶴市", "亀岡市", "宮津市", "福知山市", "長岡京市", "京丹後市", "南丹市", "八幡市"], "lat": 35.0212, "lon": 135.7556, "foods": [["湯豆腐", "京都らしい上品な和食", "★★★★☆"], ["抹茶スイーツ", "宇治茶を使った人気スイーツ", "★★★★★"], ["にしんそば", "京都で親しまれる名物そば", "★★★★☆"]]}, "大阪府": {"cities": ["大阪市", "堺市", "吹田市", "枚方市", "岸和田市", "豊中市", "高槻市", "東大阪市", "寝屋川市", "泉佐野市"], "lat": 34.6863, "lon": 135.52, "foods": [["たこ焼き", "大阪を代表する食べ歩きグルメ", "★★★★★"], ["串カツ", "新世界で有名な大阪名物", "★★★★★"], ["お好み焼き", "大阪の定番ソウルフード", "★★★★☆"]]}, "兵庫県": {"cities": ["神戸市", "姫路市", "宝塚市", "豊岡市", "淡路市", "西宮市", "明石市", "尼崎市", "赤穂市", "丹波篠山市"], "lat": 34.6913, "lon": 135.183, "foods": [["神戸牛", "兵庫を代表する高級和牛", "★★★★★"], ["明石焼き", "だしで食べるふわふわの卵焼き", "★★★★★"], ["そばめし", "神戸発祥のB級グルメ", "★★★★☆"]]}, "奈良県": {"cities": ["奈良市", "橿原市", "桜井市", "生駒市", "吉野町", "天理市", "大和郡山市", "宇陀市", "斑鳩町", "明日香村"], "lat": 34.6851, "lon": 135.8048, "foods": [["柿の葉寿司", "奈良を代表する郷土寿司", "★★★★★"], ["三輪そうめん", "歴史ある奈良の名物麺", "★★★★☆"], ["天理ラーメン", "スタミナ系の人気ラーメン", "★★★★☆"]]}, "和歌山県": {"cities": ["和歌山市", "白浜町", "田辺市", "高野町", "那智勝浦町", "新宮市", "橋本市", "有田市", "串本町", "海南市"], "lat": 34.2261, "lon": 135.1675, "foods": [["和歌山ラーメン", "濃厚な醤油豚骨系ラーメン", "★★★★★"], ["めはり寿司", "高菜で包んだ郷土料理", "★★★★☆"], ["梅干し", "南高梅で有名な和歌山名物", "★★★★☆"]]}, "鳥取県": {"cities": ["鳥取市", "米子市", "倉吉市", "境港市", "大山町", "岩美町", "三朝町", "琴浦町", "智頭町", "若桜町"], "lat": 35.5039, "lon": 134.2383, "foods": [["松葉ガニ", "鳥取の冬を代表する高級グルメ", "★★★★★"], ["牛骨ラーメン", "鳥取中部で人気のご当地ラーメン", "★★★★☆"], ["梨スイーツ", "鳥取名産の梨を使った甘味", "★★★★☆"]]}, "島根県": {"cities": ["松江市", "出雲市", "浜田市", "大田市", "津和野町", "益田市", "安来市", "雲南市", "隠岐の島町", "江津市"], "lat": 35.4723, "lon": 133.0505, "foods": [["出雲そば", "割子スタイルで楽しむ名物そば", "★★★★★"], ["しじみ汁", "宍道湖産しじみが有名", "★★★★☆"], ["のどぐろ", "山陰で人気の高級魚", "★★★★★"]]}, "岡山県": {"cities": ["岡山市", "倉敷市", "津山市", "真庭市", "備前市", "総社市", "玉野市", "笠岡市", "高梁市", "美作市"], "lat": 34.6618, "lon": 133.935, "foods": [["デミカツ丼", "岡山で人気のご当地丼", "★★★★★"], ["えびめし", "黒いソースが特徴の岡山グルメ", "★★★★☆"], ["きびだんご", "岡山土産の定番甘味", "★★★★☆"]]}, "広島県": {"cities": ["広島市", "尾道市", "福山市", "呉市", "廿日市市", "三原市", "竹原市", "東広島市", "宮島", "庄原市"], "lat": 34.3963, "lon": 132.4594, "foods": [["広島お好み焼き", "麺入りが特徴の広島名物", "★★★★★"], ["牡蠣料理", "瀬戸内の海の幸を楽しめる名物", "★★★★★"], ["尾道ラーメン", "背脂入り醤油スープが特徴", "★★★★☆"]]}, "山口県": {"cities": ["山口市", "下関市", "萩市", "長門市", "岩国市", "宇部市", "防府市", "周南市", "柳井市", "美祢市"], "lat": 34.1859, "lon": 131.4714, "foods": [["ふぐ料理", "下関を代表する高級グルメ", "★★★★★"], ["瓦そば", "熱した瓦で食べる山口名物", "★★★★★"], ["岩国寿司", "岩国地方の押し寿司", "★★★★☆"]]}, "徳島県": {"cities": ["徳島市", "鳴門市", "阿南市", "三好市", "美馬市", "小松島市", "吉野川市", "阿波市", "海陽町", "勝浦町"], "lat": 34.0658, "lon": 134.5594, "foods": [["徳島ラーメン", "甘辛い豚肉と生卵が特徴", "★★★★★"], ["阿波尾鶏", "徳島のブランド地鶏", "★★★★☆"], ["鳴門金時スイーツ", "甘いさつまいもを使った名物", "★★★★☆"]]}, "香川県": {"cities": ["高松市", "丸亀市", "琴平町", "三豊市", "小豆島町", "坂出市", "観音寺市", "さぬき市", "東かがわ市", "土庄町"], "lat": 34.3401, "lon": 134.0434, "foods": [["讃岐うどん", "香川を代表する定番グルメ", "★★★★★"], ["骨付鳥", "丸亀発祥のスパイシーな鶏料理", "★★★★★"], ["オリーブ牛", "小豆島などで知られるブランド牛", "★★★★☆"]]}, "愛媛県": {"cities": ["松山市", "今治市", "宇和島市", "西条市", "大洲市", "新居浜市", "八幡浜市", "伊予市", "内子町", "愛南町"], "lat": 33.8416, "lon": 132.7657, "foods": [["鯛めし", "愛媛を代表する郷土料理", "★★★★★"], ["今治焼豚玉子飯", "今治の人気B級グルメ", "★★★★☆"], ["みかんスイーツ", "愛媛産みかんを使った甘味", "★★★★☆"]]}, "高知県": {"cities": ["高知市", "四万十市", "室戸市", "土佐清水市", "香美市", "南国市", "須崎市", "安芸市", "いの町", "四万十町"], "lat": 33.5597, "lon": 133.5311, "foods": [["カツオのたたき", "高知を代表する名物料理", "★★★★★"], ["鍋焼きラーメン", "須崎市のご当地ラーメン", "★★★★☆"], ["皿鉢料理", "宴会文化を感じられる郷土料理", "★★★★☆"]]}, "福岡県": {"cities": ["福岡市", "北九州市", "太宰府市", "糸島市", "久留米市", "柳川市", "宗像市", "飯塚市", "大牟田市", "門司港"], "lat": 33.5904, "lon": 130.4017, "foods": [["博多ラーメン", "豚骨スープが特徴の福岡名物", "★★★★★"], ["もつ鍋", "福岡を代表する鍋料理", "★★★★★"], ["明太子", "ご飯にも合う定番土産グルメ", "★★★★☆"]]}, "佐賀県": {"cities": ["佐賀市", "唐津市", "有田町", "嬉野市", "武雄市", "鳥栖市", "伊万里市", "鹿島市", "小城市", "吉野ヶ里町"], "lat": 33.2494, "lon": 130.2988, "foods": [["佐賀牛", "佐賀を代表する高級和牛", "★★★★★"], ["呼子イカ", "透明感のある新鮮なイカ料理", "★★★★★"], ["シシリアンライス", "佐賀市のご当地グルメ", "★★★★☆"]]}, "長崎県": {"cities": ["長崎市", "佐世保市", "平戸市", "島原市", "五島市", "雲仙市", "壱岐市", "対馬市", "大村市", "諫早市"], "lat": 32.7503, "lon": 129.8777, "foods": [["長崎ちゃんぽん", "長崎を代表する麺料理", "★★★★★"], ["佐世保バーガー", "ボリューム満点のご当地バーガー", "★★★★★"], ["カステラ", "長崎土産の定番スイーツ", "★★★★☆"]]}, "熊本県": {"cities": ["熊本市", "阿蘇市", "天草市", "人吉市", "黒川温泉", "八代市", "玉名市", "宇城市", "山鹿市", "南阿蘇村"], "lat": 32.7898, "lon": 130.7417, "foods": [["馬刺し", "熊本を代表する郷土料理", "★★★★★"], ["熊本ラーメン", "マー油が特徴の濃厚ラーメン", "★★★★☆"], ["あか牛丼", "阿蘇周辺で人気のブランド牛グルメ", "★★★★★"]]}, "大分県": {"cities": ["大分市", "別府市", "由布市", "中津市", "日田市", "佐伯市", "臼杵市", "竹田市", "杵築市", "宇佐市"], "lat": 33.2382, "lon": 131.6126, "foods": [["とり天", "大分を代表する鶏料理", "★★★★★"], ["中津からあげ", "全国的にも有名なからあげ", "★★★★★"], ["だんご汁", "大分の郷土料理", "★★★★☆"]]}, "宮崎県": {"cities": ["宮崎市", "日南市", "高千穂町", "都城市", "延岡市", "日向市", "小林市", "西都市", "えびの市", "串間市"], "lat": 31.9111, "lon": 131.4239, "foods": [["チキン南蛮", "宮崎を代表する定番グルメ", "★★★★★"], ["宮崎牛", "全国的にも評価の高いブランド牛", "★★★★★"], ["冷や汁", "夏に人気の郷土料理", "★★★★☆"]]}, "鹿児島県": {"cities": ["鹿児島市", "指宿市", "霧島市", "奄美市", "屋久島町", "枕崎市", "鹿屋市", "薩摩川内市", "出水市", "種子島"], "lat": 31.5602, "lon": 130.5581, "foods": [["黒豚料理", "鹿児島を代表するブランド豚", "★★★★★"], ["しろくま", "鹿児島発祥のかき氷スイーツ", "★★★★☆"], ["さつま揚げ", "お土産にも人気の名物", "★★★★☆"]]}, "沖縄県": {"cities": ["那覇市", "沖縄市", "石垣市", "宮古島市", "名護市", "浦添市", "宜野湾市", "うるま市", "糸満市", "恩納村"], "lat": 26.2124, "lon": 127.6809, "foods": [["沖縄そば", "沖縄を代表する郷土料理", "★★★★★"], ["ゴーヤチャンプルー", "沖縄家庭料理の定番", "★★★★☆"], ["タコライス", "若者にも人気の沖縄グルメ", "★★★★☆"]]}};
+const prefectures = Object.keys(travelData);
+
+function createPrefMap(){
+  const prefMap=document.getElementById("prefMap");
+  prefMap.innerHTML="";
+  prefectures.forEach(pref=>{
+    const div=document.createElement("div");
+    div.className="pref";
+    div.textContent=pref;
+    div.id="pref-"+pref;
+    prefMap.appendChild(div);
+  });
+}
+
+function createPrefSelect(){
+  const select=document.getElementById("prefSelect");
+  const visitedSelect=document.getElementById("visitedSelect");
+  const startPref=document.getElementById("startPref");
+  const visitedCityPrefSelect=document.getElementById("visitedCityPrefSelect");
+
+  select.innerHTML='<option value="">都道府県を選択</option>';
+  visitedSelect.innerHTML='<option value="">行った県を選択</option>';
+  startPref.innerHTML='<option value="">出発地を選択しない</option>';
+  visitedCityPrefSelect.innerHTML='<option value="">都道府県を選択</option>';
+
+  prefectures.forEach(pref=>{
+    const option=document.createElement("option");
+    option.value=pref;
+    option.textContent=pref;
+    select.appendChild(option);
+
+    const option2=document.createElement("option");
+    option2.value=pref;
+    option2.textContent=pref;
+    visitedSelect.appendChild(option2);
+
+    const option3=document.createElement("option");
+    option3.value=pref;
+    option3.textContent=pref;
+    startPref.appendChild(option3);
+
+    const option4=document.createElement("option");
+    option4.value=pref;
+    option4.textContent=pref;
+    visitedCityPrefSelect.appendChild(option4);
+  });
+}
+
+
+function createCityRoulette(){
+  const pref=document.getElementById("prefSelect").value;
+  if(!rouletteBusy && pref)updateSelection(pref,'','都道府県を選択しました。市町村ルーレットを回してください');
+  const cityMap=document.getElementById("cityMap");
+  cityMap.innerHTML="";
+  if(!pref)return;
+
+  const cities=getCityRouletteCandidatesForDisplay(pref);
+
+  cities.forEach(city=>{
+    const div=document.createElement("div");
+    div.className="city";
+    div.textContent=city;
+    div.id="city-"+city;
+    cityMap.appendChild(div);
+  });
+}
+
+function getCityRouletteCandidatesForDisplay(pref){
+  const exclude=document.getElementById("excludeVisitedCities");
+  const allCities=travelData[pref].cities;
+
+  if(!exclude || !exclude.checked){
+    return allCities;
+  }
+
+  const visitedCities=getVisitedCities()
+    .filter(item=>item.pref===pref)
+    .map(item=>item.city);
+
+  const candidates=allCities.filter(city=>!visitedCities.includes(city));
+
+  if(candidates.length===0){
+    return allCities;
+  }
+
+  return candidates;
+}
+
+
+function weatherText(code){
+  if(code===0)return"快晴";
+  if([1,2,3].includes(code))return"晴れ・くもり";
+  if([45,48].includes(code))return"霧";
+  if([51,53,55,61,63,65,80,81,82].includes(code))return"雨";
+  if([71,73,75,77,85,86].includes(code))return"雪";
+  if([95,96,99].includes(code))return"雷雨";
+  return"くもり";
+}
+
+async function getWeather(lat,lon,date,signal){
+  // 日付を固定して要求せず、16日間の予報から選択する。
+  const url=`https://api.open-meteo.com/v1/forecast?latitude=${encodeURIComponent(lat)}&longitude=${encodeURIComponent(lon)}&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum&timezone=Asia%2FTokyo&forecast_days=16`;
+  const response=await fetch(url,{signal,cache:"no-store"});
+  if(!response.ok){
+    let detail="";
+    try{detail=(await response.json()).reason||"";}catch(e){}
+    throw new Error("天気API HTTP "+response.status+(detail?"："+detail:""));
+  }
+  const data=await response.json();
+  const daily=data.daily;
+  if(!daily || !Array.isArray(daily.time))throw new Error("天気データの形式が不正です");
+  const i=daily.time.indexOf(date);
+  if(i<0)throw new Error("指定日は予報対象期間外です（最大16日先まで）");
+  const weatherCode=daily.weather_code?.[i];
+  return{
+    weather:weatherCode==null?"情報なし":weatherText(weatherCode),
+    maxTemp:daily.temperature_2m_max?.[i] ?? "-",
+    minTemp:daily.temperature_2m_min?.[i] ?? "-",
+    rain:daily.precipitation_sum?.[i] ?? "-"
+  };
+}
+
+async function getWeatherWithTimeout(lat,lon,date){
+  const controller=new AbortController();
+  const timer=setTimeout(()=>controller.abort(),12000);
+  try{return await getWeather(lat,lon,date,controller.signal);}
+  finally{clearTimeout(timer);}
+}
+
+function getSeasonInfo(date){
+  const month=new Date(date).getMonth()+1;
+  let season="";
+  let recommend="";
+  let advice="";
+
+  if(month>=3&&month<=5){
+    season="春";
+    recommend="桜スポット、花畑、公園散策";
+    advice="朝晩は少し冷えることがあるので、薄手の上着があると安心です。";
+  }else if(month>=6&&month<=8){
+    season="夏";
+    recommend="海、川、高原、花火、涼しい屋内施設";
+    advice="熱中症対策として飲み物・帽子・日焼け止めを持って行くのがおすすめです。";
+  }else if(month>=9&&month<=11){
+    season="秋";
+    recommend="紅葉スポット、神社仏閣、温泉、食べ歩き";
+    advice="朝夕は冷えやすいため、羽織れる服があると便利です。";
+  }else{
+    season="冬";
+    recommend="温泉、イルミネーション、雪景色、屋内観光";
+    advice="防寒対策をしっかりして、手袋やマフラーがあると快適です。";
+  }
+
+  return{season,recommend,advice};
+}
+
+
+function getVisitedPrefs(){
+  return JSON.parse(appStorage.getItem("visitedPrefs")) || [];
+}
+
+function saveVisitedPrefs(list){
+  appStorage.setItem("visitedPrefs", JSON.stringify(list));
+}
+
+function addVisitedPref(){
+  const pref = document.getElementById("visitedSelect").value;
+
+  if(!pref){
+    alert("行った県を選択してください");
+    return;
+  }
+
+  const visited = getVisitedPrefs();
+
+  if(visited.includes(pref)){
+    alert("すでに登録済みです");
+    return;
+  }
+
+  visited.push(pref);
+  saveVisitedPrefs(visited);
+  updateVisitedUI();
+}
+
+function removeVisitedPref(pref){
+  const visited = getVisitedPrefs().filter(item => item !== pref);
+  saveVisitedPrefs(visited);
+  updateVisitedUI();
+}
+
+function clearVisitedPrefs(){
+  if(!confirm("行った県をすべて削除しますか？")) return;
+  appStorage.removeItem("visitedPrefs");
+  updateVisitedUI();
+}
+
+
+const regionGroups={
+  hokkaido:["北海道"],
+  tohoku:["青森県","岩手県","宮城県","秋田県","山形県","福島県"],
+  kanto:["茨城県","栃木県","群馬県","埼玉県","千葉県","東京都","神奈川県"],
+  chubu:["新潟県","富山県","石川県","福井県","山梨県","長野県","岐阜県","静岡県","愛知県"],
+  kansai:["三重県","滋賀県","京都府","大阪府","兵庫県","奈良県","和歌山県"],
+  chugoku:["鳥取県","島根県","岡山県","広島県","山口県"],
+  shikoku:["徳島県","香川県","愛媛県","高知県"],
+  kyushu:["福岡県","佐賀県","長崎県","熊本県","大分県","宮崎県","鹿児島県","沖縄県"]
+};
+
+const regionNames={
+  hokkaido:"北海道",
+  tohoku:"東北地方",
+  kanto:"関東地方",
+  chubu:"中部地方",
+  kansai:"関西地方",
+  chugoku:"中国地方",
+  shikoku:"四国地方",
+  kyushu:"九州・沖縄地方"
+};
+
+function addVisitedRegion(){
+  const region=document.getElementById("regionSelect").value;
+
+  if(!region){
+    alert("地方を選択してください");
+    return;
+  }
+
+  const prefs=regionGroups[region];
+  let visited=getVisitedPrefs();
+
+  prefs.forEach(pref=>{
+    if(!visited.includes(pref)){
+      visited.push(pref);
+    }
+  });
+
+  saveVisitedPrefs(visited);
+  updateVisitedUI();
+
+  alert(regionNames[region]+"を行った県に追加しました");
+}
+
+function removeVisitedRegion(){
+  const region=document.getElementById("regionSelect").value;
+
+  if(!region){
+    alert("地方を選択してください");
+    return;
+  }
+
+  if(!confirm(regionNames[region]+"を行った県から解除しますか？")){
+    return;
+  }
+
+  const prefs=regionGroups[region];
+  let visited=getVisitedPrefs();
+
+  visited=visited.filter(pref=>!prefs.includes(pref));
+
+  saveVisitedPrefs(visited);
+  updateVisitedUI();
+
+  alert(regionNames[region]+"を解除しました");
+}
+
+function getRegionProgressHtml(){
+  const visited=getVisitedPrefs();
+
+  return Object.keys(regionGroups).map(key=>{
+    const prefs=regionGroups[key];
+    const count=prefs.filter(pref=>visited.includes(pref)).length;
+    const total=prefs.length;
+    const percent=Math.round((count/total)*100);
+
+    return `
+      <p>
+        <b>${regionNames[key]}</b>：${count} / ${total}県　${percent}%
+      </p>
+    `;
+  }).join("");
+}
+
+
+
+function createVisitedCitySelect(){
+  const pref=document.getElementById("visitedCityPrefSelect").value;
+  const citySelect=document.getElementById("visitedCitySelect");
+
+  citySelect.innerHTML='<option value="">市町村を選択</option>';
+
+  if(!pref)return;
+
+  travelData[pref].cities.forEach(city=>{
+    const option=document.createElement("option");
+    option.value=city;
+    option.textContent=city;
+    citySelect.appendChild(option);
+  });
+
+  updateVisitedCityUI();
+}
+
+function getVisitedCities(){
+  return JSON.parse(appStorage.getItem("visitedCities")) || [];
+}
+
+function saveVisitedCities(list){
+  appStorage.setItem("visitedCities", JSON.stringify(list));
+}
+
+function addVisitedCity(){
+  const pref=document.getElementById("visitedCityPrefSelect").value;
+  const city=document.getElementById("visitedCitySelect").value;
+
+  if(!pref){
+    alert("都道府県を選択してください");
+    return;
+  }
+
+  if(!city){
+    alert("市町村を選択してください");
+    return;
+  }
+
+  const visitedCities=getVisitedCities();
+
+  const exists=visitedCities.some(item=>item.pref===pref && item.city===city);
+
+  if(exists){
+    alert("すでに登録済みです");
+    return;
+  }
+
+  visitedCities.push({
+    pref:pref,
+    city:city,
+    visitedAt:new Date().toLocaleDateString()
+  });
+
+  saveVisitedCities(visitedCities);
+  updateVisitedCityUI();
+
+  alert(pref+" "+city+" を行った市町村に追加しました");
+}
+
+function removeVisitedCity(index){
+  const visitedCities=getVisitedCities();
+  visitedCities.splice(index,1);
+  saveVisitedCities(visitedCities);
+  updateVisitedCityUI();
+}
+
+function clearVisitedCities(){
+  if(!confirm("行った市町村をすべて削除しますか？"))return;
+  appStorage.removeItem("visitedCities");
+  updateVisitedCityUI();
+}
+
+function updateVisitedCityUI(){
+  const visitedCityList=document.getElementById("visitedCityList");
+  const progress=document.getElementById("visitedCityProgressText");
+
+  if(!visitedCityList || !progress)return;
+
+  const visitedCities=getVisitedCities();
+  progress.innerHTML=`行った市町村：${visitedCities.length}件`;
+
+  if(visitedCities.length===0){
+    visitedCityList.innerHTML="まだ登録されていません。";
+    return;
+  }
+
+  const prefCount={};
+  visitedCities.forEach(item=>{
+    prefCount[item.pref]=(prefCount[item.pref]||0)+1;
+  });
+
+  const summary=Object.keys(prefCount).map(pref=>{
+    return `${pref}：${prefCount[pref]}件`;
+  }).join("　");
+
+  const selectedPref=document.getElementById("visitedCityPrefSelect").value;
+  const selectedProgress=selectedPref ? getCityProgressHtml(selectedPref) : "";
+
+  visitedCityList.innerHTML=`
+    ${selectedProgress}
+    <p><b>都道府県別：</b>${summary}</p>
+    ${visitedCities.map((item,index)=>`
+      <div class="visited-city-item">
+        ✅ ${item.pref} ${item.city}<br>
+        登録日：${item.visitedAt}<br>
+        <button class="delete-btn" onclick="removeVisitedCity(${index})">解除</button>
+      </div>
+    `).join("")}
+  `;
+}
+
+
+function updateVisitedUI(){
+  const visited = getVisitedPrefs();
+  const count = visited.length;
+  const percent = Math.round((count / 47) * 100);
+
+  document.getElementById("visitedProgressText").innerHTML =
+    `${count} / 47県　達成率：${percent}%`;
+
+  document.getElementById("progressFill").style.width = percent + "%";
+
+  const unvisited = prefectures.filter(pref => !visited.includes(pref));
+  document.getElementById("unvisitedList").innerHTML =
+    `<p>未訪問県：${unvisited.length}県</p><p>${unvisited.join("、")}</p>`;
+
+  const visitedMap = document.getElementById("visitedMap");
+  visitedMap.innerHTML = "";
+
+  prefectures.forEach(pref=>{
+    const div = document.createElement("div");
+    div.className = visited.includes(pref) ? "visited-pref done" : "visited-pref";
+    div.innerHTML = visited.includes(pref)
+      ? `✅ ${pref}<br><button class="delete-btn" onclick="removeVisitedPref('${pref}')">解除</button>`
+      : pref;
+    visitedMap.appendChild(div);
+  });
+}
+
+function getRoulettePrefectures(){
+  const exclude = document.getElementById("excludeVisited").checked;
+
+  if(!exclude){
+    return prefectures;
+  }
+
+  const visited = getVisitedPrefs();
+  const candidates = prefectures.filter(pref => !visited.includes(pref));
+
+  if(candidates.length === 0){
+    alert("全都道府県を制覇しています。除外を外してください。");
+    return prefectures;
+  }
+
+  return candidates;
+}
+
+
+
+// 音声ファイル不要：Web Audio APIでルーレット効果音を生成
+let rouletteAudioContext=null;
+function soundEnabled(){return document.getElementById('rouletteSound')?.checked===true;}
+function ensureRouletteAudio(){
+  if(!soundEnabled())return;
+  try{
+    if(!rouletteAudioContext){rouletteAudioContext=new (window.AudioContext||window.webkitAudioContext)();}
+    if(rouletteAudioContext.state==='suspended')rouletteAudioContext.resume().catch(()=>{});
+  }catch(e){}
+}
+function playRouletteTone(freq=650,duration=.045,volume=.075,type='square',delay=0){
+  if(!soundEnabled()||!rouletteAudioContext||rouletteAudioContext.state!=='running')return;
+  try{
+    const ctx=rouletteAudioContext,osc=ctx.createOscillator(),gain=ctx.createGain();
+    const start=ctx.currentTime+delay;
+    osc.type=type;osc.frequency.setValueAtTime(freq,start);
+    gain.gain.setValueAtTime(.0001,start);
+    gain.gain.exponentialRampToValueAtTime(volume,start+.008);
+    gain.gain.exponentialRampToValueAtTime(.0001,start+duration);
+    osc.connect(gain);gain.connect(ctx.destination);
+    osc.start(start);osc.stop(start+duration+.01);
+  }catch(e){}
+}
+function playRouletteFinish(){
+  playRouletteTone(523,.16,.10,'sine',0);
+  playRouletteTone(659,.16,.10,'sine',.14);
+  playRouletteTone(784,.30,.12,'sine',.28);
+}
+
+let rouletteBusy=false;
+function updateSelection(pref,city,status){
+  document.getElementById('selectedPrefText').textContent=pref||'都道府県を選んでください';
+  document.getElementById('selectedCityText').textContent=city?'🏙 '+city:'市町村：未選択';
+  document.getElementById('selectionStatus').textContent=status||'';
+}
+function flashSelectedDestination(pref,city,finished){
+  const panel=document.getElementById('selectionPanel');
+  panel.classList.remove('flash-result','final-result');
+  document.querySelectorAll('.flash-tile').forEach(el=>el.classList.remove('flash-tile'));
+  // Restart animation even when the same prefecture is selected twice.
+  void panel.offsetWidth;
+  panel.classList.add('flash-result');
+  if(finished)panel.classList.add('final-result');
+  const prefTile=document.getElementById('pref-'+pref);
+  const cityTile=city?document.getElementById('city-'+city):null;
+  if(prefTile)prefTile.classList.add('flash-tile');
+  if(cityTile)cityTile.classList.add('flash-tile');
+  updateSelection(pref,city,finished?'🎉 旅行先が決定しました！':'🎯 都道府県が決定！ 続いて市町村を抽選します');
+  scrollToSelection();
+}
+function scrollToSelection(){
+  document.getElementById('selectionPanel').scrollIntoView({behavior:window.matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth',block:'start'});
+}
+function spinPrefRoulette(){
+  if(rouletteBusy)return;
+  ensureRouletteAudio();
+  rouletteBusy=true;
+  document.getElementById('selectionPanel').classList.remove('final-result','flash-result');
+  document.querySelectorAll('.flash-tile').forEach(el=>el.classList.remove('flash-tile'));
+  updateSelection('抽選中…','','都道府県ルーレットを回しています');
+  scrollToSelection();
+  const dateInput=document.getElementById("travelDate");
+  if(!dateInput.value) dateInput.value=localDateString();
+  const date=dateInput.value;
+
+  if(!date){
+    alert("旅行日を選択してください");
+    rouletteBusy=false;
+    return;
+  }
+
+  document.getElementById("result").style.display="none";
+  document.getElementById("cityMap").innerHTML="";
+
+  const roulettePrefs = getRoulettePrefectures();
+
+  let count=0;
+  let selectedPref="";
+
+  const interval=setInterval(()=>{
+    document.querySelectorAll(".pref").forEach(tile=>{
+      tile.classList.remove("active","selected");
+    });
+
+    selectedPref=roulettePrefs[Math.floor(Math.random()*roulettePrefs.length)];
+    document.getElementById("pref-"+selectedPref).classList.add("active");
+
+    count++;
+    if(count%2===0)playRouletteTone(580+(count%5)*65,.035,.045);
+
+    if(count>=35){
+      clearInterval(interval);
+      document.getElementById("pref-"+selectedPref).classList.remove("active");
+      document.getElementById("pref-"+selectedPref).classList.add("selected");
+      document.getElementById("prefSelect").value=selectedPref;
+      createCityRoulette();
+      flashSelectedDestination(selectedPref,"",false);
+      playRouletteFinish();
+
+      setTimeout(()=>{rouletteBusy=false;spinCityRoulette();},1200);
+    }
+  },80);
+}
+
+
+function getVisitedCitiesByPref(pref){
+  return getVisitedCities()
+    .filter(item=>item.pref===pref)
+    .map(item=>item.city);
+}
+
+
+function getCityRouletteCandidates(pref){
+  const exclude=document.getElementById("excludeVisitedCities");
+  const allCities=travelData[pref].cities;
+
+  if(!exclude || !exclude.checked){
+    return allCities;
+  }
+
+  const visitedCities=getVisitedCities()
+    .filter(item=>item.pref===pref)
+    .map(item=>item.city);
+
+  const candidates=allCities.filter(city=>!visitedCities.includes(city));
+
+  if(candidates.length===0){
+    alert(pref+"の市町村はすべて登録済みです。行った市町村の除外を外してください。");
+    return [];
+  }
+
+  return candidates;
+}
+
+
+function getCityProgressHtml(pref){
+  const allCities=travelData[pref].cities;
+  const visitedCities=getVisitedCitiesByPref(pref);
+  const count=visitedCities.length;
+  const total=allCities.length;
+  const percent=Math.round((count/total)*100);
+  const unvisitedCities=allCities.filter(city=>!visitedCities.includes(city));
+
+  return `
+    <p><b>${pref}の市町村制覇率</b>：${count} / ${total}件　${percent}%</p>
+    <div class="progress-bar">
+      <div class="progress-fill" style="width:${percent}%"></div>
+    </div>
+    <p><b>未訪問市町村：</b>${unvisitedCities.length ? unvisitedCities.join("、") : "すべて登録済み"}</p>
+  `;
+}
+
+
+
+function spinCityRoulette(){
+  if(rouletteBusy)return;
+  ensureRouletteAudio();
+  rouletteBusy=true;
+  const pref=document.getElementById("prefSelect").value;
+  if(pref){updateSelection(pref,'抽選中…','市町村ルーレットを回しています');scrollToSelection();}
+  const dateInput=document.getElementById("travelDate");
+  if(!dateInput.value) dateInput.value=localDateString();
+  const date=dateInput.value;
+
+  if(!pref){
+    alert("都道府県を選択してください");
+    rouletteBusy=false;
+    return;
+  }
+
+  if(!date){
+    alert("旅行日を選択してください");
+    rouletteBusy=false;
+    return;
+  }
+
+  if(document.getElementById("cityMap").children.length===0){
+    createCityRoulette();
+  }
+
+  const cities=getCityRouletteCandidates(pref);
+
+  if(!cities || cities.length===0){
+    alert("ルーレット候補の市町村がありません");
+    rouletteBusy=false;
+    return;
+  }
+
+  let count=0;
+  let selectedCity="";
+
+  const interval=setInterval(()=>{
+    document.querySelectorAll(".city").forEach(tile=>{
+      tile.classList.remove("active","selected");
+    });
+
+    selectedCity=cities[Math.floor(Math.random()*cities.length)];
+    const tile=document.getElementById("city-"+selectedCity);
+
+    if(tile){
+      tile.classList.add("active");
+    }
+
+    count++;
+    if(count%2===0)playRouletteTone(580+(count%5)*65,.035,.045);
+
+    if(count>=35){
+      clearInterval(interval);
+
+      document.querySelectorAll(".city").forEach(tile=>{
+        tile.classList.remove("active","selected");
+      });
+
+      const finalTile=document.getElementById("city-"+selectedCity);
+
+      if(finalTile){
+        finalTile.classList.add("selected");
+      }
+
+      rouletteBusy=false;
+      flashSelectedDestination(pref,selectedCity,true);
+      playRouletteFinish();
+      showResult(pref,selectedCity,date);
+    }
+  },80);
+}
+
+
+
+// 旅行タイプ・旅費計算（前版で欠落していた関数）
+function getTravelTypeInfo(){
+ const types={
+ standard:['標準プラン','観光・グルメ・休憩をバランスよく楽しむ','定番の観光地を散策','街歩きや観光スポットを巡る','地元の飲食店で夕食','折りたたみ傘'],
+ solo:['一人旅','自分のペースで自由に行動','気になる街をゆっくり散策','博物館やカフェを巡る','一人でも入りやすいお店で夕食','イヤホン'],
+ friends:['友達旅行','みんなで楽しめる場所を優先','人気スポットで記念撮影','体験型施設で遊ぶ','ご当地グルメを食べ比べ','モバイルバッテリー'],
+ couple:['カップル旅行','景色や雰囲気を楽しむ','景色のよい場所を散策','カフェや庭園で過ごす','夜景や雰囲気のよいお店へ','カメラ'],
+ family:['家族旅行','移動負担を抑えて楽しむ','家族向けの観光施設へ','公園や屋内施設で過ごす','家族でゆっくり夕食','常備薬'],
+ gourmet:['グルメ旅','ご当地の味を中心に巡る','朝市や商店街を散策','人気店や食べ歩きスポットへ','名物料理を楽しむ','ウェットティッシュ'],
+ onsen:['温泉旅','温泉と休養を中心に過ごす','温泉街を散策','日帰り温泉や足湯へ','旅館や食事処で夕食','タオル'],
+ nature:['自然旅','自然や景観を楽しむ','公園や展望台を散策','自然スポットで景色を楽しむ','地元の食材を使った夕食','歩きやすい靴'],
+ pet:['🐾 ペット連れ旅行','ペットと無理なく楽しめる屋外散策を中心に、休憩を多めに取る。施設・飲食店・宿泊先の同伴可否は事前確認が必要','ペット同伴可能な公園や遊歩道を探して散策','ペットが休める場所で休憩し、同伴可能な観光スポットを探す','ペット同伴可能な飲食店や宿泊先を事前確認して利用','リード・水・携帯用食器・排泄物処理用品']
+ };
+ const key=document.getElementById('travelType')?.value||'standard';
+ const t=types[key]||types.standard;
+ return {name:t[0],point:t[1],morning:t[2],afternoon:t[3],night:t[4],item:t[5]};
+}
+function calculateTripCost(pref){
+ const start=document.getElementById('startPref')?.value||'';
+ const budgetRaw=document.getElementById('budget')?.value||'';
+ const budget=budgetRaw===''?null:Number(budgetRaw);
+ const samePref=start===pref && !!start;
+ // 実際の運賃・宿泊料金ではなく参考用の概算
+ const roundTrip=!start?8000:(samePref?2000:12000);
+ const hotelCost=8000,foodCost=4500,sightseeingCost=2500;
+ const total=roundTrip+hotelCost+foodCost+sightseeingCost;
+ const budgetJudge=budget===null?'予算未設定':(total<=budget?'予算内の目安':'予算を超える目安');
+ return {startPref:start||'未指定',method:'公共交通機関（概算）',roundTrip,hotelCost,foodCost,sightseeingCost,total,budgetJudge};
+}
+function createCostHtml(cost){
+ const yen=n=>Number(n||0).toLocaleString()+'円';
+ return `<p>出発地：${cost.startPref} / 交通手段：${cost.method}</p>
+ <table class="cost-table"><tr><th>項目</th><th>概算</th></tr>
+ <tr><td>往復交通費</td><td>${yen(cost.roundTrip)}</td></tr>
+ <tr><td>宿泊費</td><td>${yen(cost.hotelCost)}</td></tr>
+ <tr><td>食費</td><td>${yen(cost.foodCost)}</td></tr>
+ <tr><td>観光費</td><td>${yen(cost.sightseeingCost)}</td></tr>
+ <tr><th>合計</th><th>${yen(cost.total)}</th></tr></table>
+ <p>${cost.budgetJudge}</p><p class="small-text">※料金は参考用の仮の概算です。実際の交通費・宿泊費ではありません。</p>`;
+}
+
+function createAIPlan(pref,city,date,weather,foods,cost){
+  const budgetInput=document.getElementById("budget").value;
+  const budget=budgetInput===""?null:Number(budgetInput);
+  const seasonInfo=getSeasonInfo(date);
+  const typeInfo=getTravelTypeInfo();
+
+  let budgetAdvice="";
+  if(budget===null){
+    budgetAdvice="予算指定なしのため、観光・グルメ・休憩をバランスよく入れた標準プランです。";
+  }else if(budget<=10000){
+    budgetAdvice="1万円以内なので、無料観光地・食べ歩き・日帰り中心の節約プランがおすすめです。";
+  }else if(budget<=30000){
+    budgetAdvice="3万円以内なので、観光とご当地グルメをしっかり楽しめる標準プランです。";
+  }else if(budget<=50000){
+    budgetAdvice="5万円以内なので、宿泊や少し贅沢な食事も視野に入れられるプランです。";
+  }else{
+    budgetAdvice="5万円以上なので、宿泊・高級グルメ・体験型観光を入れた贅沢旅行プランがおすすめです。";
+  }
+
+  let weatherAdvice="";
+  if(weather.weather.includes("雨")||Number(weather.rain)>0){
+    weatherAdvice="雨や降水の可能性があるため、屋内施設やカフェ休憩を多めにするのがおすすめです。";
+  }else{
+    weatherAdvice="屋外観光を中心に、写真撮影や散策を楽しみやすいプランです。";
+  }
+
+  return `
+🤖 AIおすすめ旅行プラン
+
+📍旅行先：${pref} ${city}
+💰予算：${budget===null?"指定なし":budget+"円"}
+👤旅行タイプ：${typeInfo.name}
+${typeInfo.name.includes("ペット") ? "🐾 注意：ペット同伴可否・頭数・犬種・追加料金・交通機関の条件を事前確認してください。旅費目安にペット追加料金は含みません。\n" : ""}🌸季節：${seasonInfo.season}
+☀ 天気：${weather.weather}
+🌡 最高気温：${weather.maxTemp}℃
+🌡 最低気温：${weather.minTemp}℃
+☔ 降水量：${weather.rain}mm
+💴旅費目安：${cost.total.toLocaleString()}円
+
+━━━━━━━━━━━━━━━━━━
+👤 旅行タイプ別おすすめ
+━━━━━━━━━━━━━━━━━━
+${typeInfo.point}
+
+━━━━━━━━━━━━━━━━━━
+🌸 季節ごとのおすすめ
+━━━━━━━━━━━━━━━━━━
+おすすめ：${seasonInfo.recommend}
+
+季節アドバイス：
+${seasonInfo.advice}
+
+━━━━━━━━━━━━━━━━━━
+🍜 おすすめグルメ
+━━━━━━━━━━━━━━━━━━
+1. ${foods[0][0]}　人気度：${foods[0][2]}
+${foods[0][1]}
+
+2. ${foods[1][0]}　人気度：${foods[1][2]}
+${foods[1][1]}
+
+3. ${foods[2][0]}　人気度：${foods[2][2]}
+${foods[2][1]}
+
+━━━━━━━━━━━━━━━━━━
+💴 旅費シミュレーター
+━━━━━━━━━━━━━━━━━━
+出発地：${cost.startPref}
+交通手段：${cost.method}
+往復交通費：${cost.roundTrip.toLocaleString()}円
+宿泊費：${cost.hotelCost.toLocaleString()}円
+食費：${cost.foodCost.toLocaleString()}円
+観光費：${cost.sightseeingCost.toLocaleString()}円
+合計：${cost.total.toLocaleString()}円
+判定：${cost.budgetJudge}
+
+━━━━━━━━━━━━━━━━━━
+💰 予算アドバイス
+━━━━━━━━━━━━━━━━━━
+${budgetAdvice}
+
+━━━━━━━━━━━━━━━━━━
+🕘 午前
+━━━━━━━━━━━━━━━━━━
+09:00　${city}周辺へ到着
+10:00　${typeInfo.morning}
+
+━━━━━━━━━━━━━━━━━━
+🍴 昼
+━━━━━━━━━━━━━━━━━━
+12:00　${typeInfo.name.includes("ペット") ? "ペット同伴可能な飲食店を確認して昼食（候補のご当地グルメ："+foods[0][0]+"）" : foods[0][0]+"を楽しむ"}
+
+━━━━━━━━━━━━━━━━━━
+🚶 午後
+━━━━━━━━━━━━━━━━━━
+14:00　${typeInfo.afternoon}
+15:30　${typeInfo.name.includes("ペット") ? "ペットの水分補給・休憩（暑い日は地面の温度にも注意）" : "カフェ休憩・お土産探し"}
+16:30　夕方の景色を楽しむ
+
+━━━━━━━━━━━━━━━━━━
+🌙 夜
+━━━━━━━━━━━━━━━━━━
+18:00　${typeInfo.night}
+20:00　帰宅またはホテルへ
+
+━━━━━━━━━━━━━━━━━━
+🤖 天気アドバイス
+━━━━━━━━━━━━━━━━━━
+${weatherAdvice}
+
+🎒 持ち物
+・スマホ充電器
+・歩きやすい靴
+・飲み物
+・現金少し
+・モバイルバッテリー
+・${typeInfo.item}
+`;
+}
+
+// プランはすぐ表示し、天気が取得できたら天気とプランだけ更新する。
+let currentTripRequest=0;
+async function showResult(pref,city,date){
+  const requestId=++currentTripRequest;
+  const result=document.getElementById("result");
+  const data=travelData[pref];
+  const weather={weather:"取得中...",maxTemp:"-",minTemp:"-",rain:"-"};
+  result.style.display="block";
+  result.innerHTML="<p>旅行プランを準備しています...</p>";
+  try{
+    const seasonInfo=getSeasonInfo(date);
+    const typeInfo=getTravelTypeInfo();
+    const foods=data.foods;
+    const cost=calculateTripCost(pref);
+    const budget=document.getElementById("budget").value||"指定なし";
+    const tripData={
+      pref,city,date,budget,weather,seasonInfo,typeInfo,foods,cost,
+      aiPlan:createAIPlan(pref,city,date,weather,foods,cost),
+      savedAt:new Date().toLocaleDateString()
+    };
+    try { displayTrip(tripData,true); }
+    catch (renderError) {
+      console.error('詳細カードの表示エラー:',renderError);
+      result.innerHTML=`<h2>🎯 ${pref} ${city}</h2><div class="card"><h3>☀ 天気予報</h3><div id="weatherResult">天気を取得中...</div></div><div class="card"><h3>🤖 おすすめ旅行プラン</h3><pre class="ai-plan" id="aiPlanResult"></pre></div>`;
+      document.getElementById('aiPlanResult').textContent=tripData.aiPlan;
+    }
+    // ブラウザが先にAIプランを描画できるよう非同期で天気を取得
+    await new Promise(resolve=>setTimeout(resolve,0));
+    let latestWeather;
+    try{
+      latestWeather=await getWeatherWithTimeout(data.lat,data.lon,date);
+    }catch(error){
+      console.warn("天気予報:",error);
+      latestWeather={
+        weather:/予報対象期間外/.test(error.message) ? "予報対象期間外（旅行日が近づいてから確認）" : "取得失敗："+error.message,
+        maxTemp:"-",minTemp:"-",rain:"-"
+      };
+    }
+    if(requestId!==currentTripRequest)return;
+    tripData.weather=latestWeather;
+    tripData.aiPlan=createAIPlan(pref,city,date,latestWeather,foods,cost);
+    // 結果の再描画を避け、スクロール位置と保存ボタンを維持する
+    const weatherBox=document.getElementById("weatherResult");
+    if(weatherBox){
+      weatherBox.innerHTML=`<p>日付：${date}</p>
+        <p>天気：${latestWeather.weather}</p>
+        <p>最高気温：${latestWeather.maxTemp}℃</p>
+        <p>最低気温：${latestWeather.minTemp}℃</p>
+        <p>降水量：${latestWeather.rain}mm</p>`;
+    }
+    const planBox=document.getElementById("aiPlanResult");
+    if(planBox) planBox.textContent=tripData.aiPlan;
+    // 保存・共有時に最新の天気情報を使う
+    const saveButton=document.getElementById("saveCurrentTrip");
+    if(saveButton)saveButton.onclick=()=>saveTrip(tripData);
+  }catch(error){
+    console.error("旅行プラン表示エラー:",error);
+    const fallback=`🤖 おすすめ旅行プラン\n📍 ${pref} ${city}\n📅 ${date}\n09:00 到着・周辺散策\n12:00 ご当地グルメ\n14:00 観光・街歩き\n18:00 夕食・帰路`; 
+    result.innerHTML=`<div class="card"><h3>☀ 天気予報</h3><p>天気情報を取得できませんでした。</p></div><div class="card"><h3>🤖 おすすめ旅行プラン</h3><pre class="ai-plan"></pre></div>`;
+    result.querySelector('.ai-plan').textContent=fallback;
+  }
+}
+
+function createShareText(trip){
+  let costText = "";
+  if(trip.cost){
+    costText =
+`💴旅費目安
+出発地：${trip.cost.startPref}
+交通手段：${trip.cost.method}
+往復交通費：${trip.cost.roundTrip.toLocaleString()}円
+宿泊費：${trip.cost.hotelCost.toLocaleString()}円
+食費：${trip.cost.foodCost.toLocaleString()}円
+観光費：${trip.cost.sightseeingCost.toLocaleString()}円
+合計：${trip.cost.total.toLocaleString()}円
+判定：${trip.cost.budgetJudge}`;
+  }
+
+  let foodText = "";
+  if(trip.foods){
+    foodText =
+`🍜おすすめグルメ
+1. ${trip.foods[0][0]} ${trip.foods[0][2]}
+2. ${trip.foods[1][0]} ${trip.foods[1][2]}
+3. ${trip.foods[2][0]} ${trip.foods[2][2]}`;
+  }
+
+  return `🎡AI旅ルーレット結果
+
+📍旅行先：${trip.pref} ${trip.city}
+📅旅行日：${trip.date}
+💰予算：${trip.budget}
+👤旅行タイプ：${trip.typeInfo ? trip.typeInfo.name : "標準プラン"}
+🌸季節：${trip.seasonInfo ? trip.seasonInfo.season : "未設定"}
+
+☀天気：${trip.weather.weather}
+最高気温：${trip.weather.maxTemp}℃
+最低気温：${trip.weather.minTemp}℃
+降水量：${trip.weather.rain}mm
+
+${foodText}
+
+${costText}
+
+🗺Googleマップ
+https://www.google.com/maps/search/${encodeURIComponent(trip.pref+" "+trip.city)}`;
+}
+
+function createShareButtonsHtml(trip){
+  const text = createShareText(trip);
+  const encodedText = encodeURIComponent(text);
+  const mailSubject = encodeURIComponent("AI旅ルーレット結果");
+  const mailBody = encodedText;
+
+  return `
+    <div class="share-buttons">
+      <a target="_blank" rel="noopener noreferrer" href="https://line.me/R/msg/text/?${encodedText}">LINEで送る</a>
+      <a class="mail" href="mailto:?subject=${mailSubject}&body=${mailBody}">メールで送る</a>
+      <button onclick='shareTrip(${JSON.stringify(text)})'>スマホで共有</button>
+      <button class="copy" onclick='copyTripText(${JSON.stringify(text)})'>結果をコピー</button>
+    </div>
+  `;
+}
+
+async function shareTrip(text){
+  if(navigator.share){
+    try{
+      await navigator.share({
+        title:"AI旅ルーレット結果",
+        text:text
+      });
+    }catch(e){
+      alert("共有をキャンセルしました");
+    }
+  }else{
+    copyTripText(text);
+  }
+}
+
+function copyTripText(text){
+  if(navigator.clipboard){
+    navigator.clipboard.writeText(text).then(()=>{
+      alert("結果をコピーしました");
+    });
+  }else{
+    const textarea=document.createElement("textarea");
+    textarea.value=text;
+    document.body.appendChild(textarea);
+    textarea.select();
+    document.execCommand("copy");
+    document.body.removeChild(textarea);
+    alert("結果をコピーしました");
+  }
+}
+
+
+
+// ===== 旅行結果表示 =====
+function displayTrip(trip,showSaveButton,shouldScroll=true){
+  const result=document.getElementById("result");
+  result.style.display="block";
+
+  const saveHtml=showSaveButton
+    ? `<div class="card"><button id="saveCurrentTrip">❤️ この旅行結果を保存</button></div>`
+    : "";
+
+  const foodHtml=trip.foods.map(food=>`
+    <div class="food-item">
+      <b>${food[0]}</b><br>
+      ${food[1]}<br>
+      人気度：${food[2]}<br>
+      <a target="_blank" rel="noopener noreferrer" href="https://www.google.com/maps/search/${trip.pref}+${trip.city}+${food[0]}">Googleマップで探す</a>
+    </div>
+  `).join("");
+
+  result.innerHTML=`
+  <h2>🎯 ${trip.pref} ${trip.city}</h2>
+
+  <div class="card">
+    <h3>🏙 市町村制覇状況</h3>
+    ${getCityProgressHtml(trip.pref)}
+  </div>
+
+  <div class="card">
+    <h3>🗺 Googleマップで探す</h3>
+    <p><a target="_blank" rel="noopener noreferrer" href="https://www.google.com/maps/search/${trip.pref}+${trip.city}+観光地">📍 観光地を探す</a></p>
+    <p><a target="_blank" rel="noopener noreferrer" href="https://www.google.com/maps/search/${trip.pref}+${trip.city}+グルメ">🍴 グルメを探す</a></p>
+    <p><a target="_blank" rel="noopener noreferrer" href="https://www.google.com/maps/search/${trip.pref}+${trip.city}+ホテル">🏨 ホテルを探す</a></p>
+  </div>
+
+  <div class="card">
+    <h3>👤 旅行タイプ</h3>
+    <p><span class="type-badge">${trip.typeInfo ? trip.typeInfo.name : "標準プラン"}</span></p>
+    <p>${trip.typeInfo ? trip.typeInfo.point : "観光・グルメ・休憩をバランスよく入れた旅行にします。"}</p>
+  </div>
+
+  <div class="card">
+    <h3>🌸 季節おすすめ</h3>
+    <p>季節：${trip.seasonInfo.season}</p>
+    <p>おすすめ：${trip.seasonInfo.recommend}</p>
+    <p>${trip.seasonInfo.advice}</p>
+  </div>
+
+  <div class="card">
+    <h3>🍜 おすすめグルメ</h3>
+    ${foodHtml}
+  </div>
+
+  <div class="card">
+    <h3>💴 旅費シミュレーター</h3>
+    ${trip.cost ? createCostHtml(trip.cost) : "<p>旅費データがありません。</p>"}
+  </div>
+
+  <div class="card">
+    <h3>☀ 天気予報</h3>
+    <p class="small-text">出発日が今日から16日以内の場合に予報を取得します。天気は都道府県の代表地点の予報です。</p>
+    <div id="weatherResult">
+    <p>日付：${trip.date}</p>
+    <p>天気：${trip.weather.weather}</p>
+    <p>最高気温：${trip.weather.maxTemp}℃</p>
+    <p>最低気温：${trip.weather.minTemp}℃</p>
+    <p>降水量：${trip.weather.rain}mm</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>🤖 おすすめ旅行プラン</h3>
+    <p class="small-text">旅行タイプ・予算・季節に基づく自動作成プランです（外部の生成AIは使用していません）。</p>
+    <div class="ai-plan" id="aiPlanResult">${trip.aiPlan}</div>
+  </div>
+
+
+  <div class="card">
+    <h3>📤 結果を共有</h3>
+    <p>LINE・メール・スマホの共有機能で旅行結果を送れます。</p>
+    ${createShareButtonsHtml(trip)}
+  </div>
+
+  ${saveHtml}
+  `;
+
+  const saveButton=document.getElementById("saveCurrentTrip");
+  if(saveButton)saveButton.onclick=()=>saveTrip(trip);
+  if(shouldScroll) result.scrollIntoView({behavior:"smooth"});
+}
+
+function saveTrip(trip){
+  const savedTrips=JSON.parse(appStorage.getItem("savedTrips"))||[];
+
+  const exists=savedTrips.some(item=>
+    item.pref===trip.pref &&
+    item.city===trip.city &&
+    item.date===trip.date &&
+    item.budget===trip.budget
+  );
+
+  if(exists){
+    alert("すでに保存済みです");
+    return;
+  }
+
+  savedTrips.push(trip);
+  appStorage.setItem("savedTrips",JSON.stringify(savedTrips));
+  showSavedTrips();
+  alert("旅行結果を保存しました！");
+}
+
+function showSavedTrips(){
+  const savedList=document.getElementById("savedList");
+  const savedTrips=JSON.parse(appStorage.getItem("savedTrips"))||[];
+
+  if(savedTrips.length===0){
+    savedList.innerHTML="まだ保存されていません。";
+    return;
+  }
+
+  savedList.innerHTML=savedTrips.map((trip,index)=>`
+    <div class="saved-item" onclick="viewSavedTrip(${index})">
+      ❤️ ${trip.pref} ${trip.city}<br>
+      旅行日：${trip.date}<br>
+      予算：${trip.budget}<br>
+      季節：${trip.seasonInfo.season}<br>
+      タイプ：${trip.typeInfo ? trip.typeInfo.name : "標準プラン"}<br>
+      旅費目安：${trip.cost ? trip.cost.total.toLocaleString()+"円" : "未計算"}<br>
+      保存日：${trip.savedAt}<br>
+      <button class="delete-btn" onclick="event.stopPropagation();deleteTrip(${index})">削除</button>
+    </div>
+  `).join("");
+}
+
+function viewSavedTrip(index){
+  const savedTrips=JSON.parse(appStorage.getItem("savedTrips"))||[];
+  const trip=savedTrips[index];
+  displayTrip(trip,false);
+}
+
+function deleteTrip(index){
+  const savedTrips=JSON.parse(appStorage.getItem("savedTrips"))||[];
+  savedTrips.splice(index,1);
+  appStorage.setItem("savedTrips",JSON.stringify(savedTrips));
+  showSavedTrips();
+}
+
+function clearAllTrips(){
+  if(!confirm("すべて削除しますか？"))return;
+  appStorage.removeItem("savedTrips");
+  showSavedTrips();
+}
+
+function localDateString(){
+ const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+if(!document.getElementById('travelDate').value)document.getElementById('travelDate').value=localDateString();
+createPrefMap();
+createPrefSelect();
+try{updateVisitedUI();}catch(e){console.warn('訪問履歴:',e);}
+try{updateVisitedCityUI();}catch(e){console.warn('市町村履歴:',e);}
+try{showSavedTrips();}catch(e){console.warn('保存履歴:',e);}
+</script>
+</body>
+</html>
